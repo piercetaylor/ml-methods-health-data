@@ -1,0 +1,4 @@
+model,r2,rmse,mae,cv_r2_mean,cv_r2_sd
+least squares,0.215867,3.09911,2.45755,0.058394,0.092971
+log least squares,0.15298,3.22099,2.32167,,
+random forest,0.234987,3.06109,2.39133,0.118437,0.107088

@@ -1,0 +1,5 @@
+min_support,frequent_itemsets,itemsets_with_malignant,itemsets_with_benign
+0.4,3653,0,792
+0.3,9886,1,1735
+0.2,27045,31,4104
+0.1,80058,1699,8716

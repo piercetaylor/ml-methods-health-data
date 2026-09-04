@@ -1,0 +1,4 @@
+method,clusters,unassigned,assigned_fraction,smallest_cluster,calinski_harabasz,silhouette,davies_bouldin,adjusted_rand,adjusted_mutual_information,homogeneity,completeness
+k-means,4,0,1.0,4,103.281556,0.181436,1.549854,0.136662,0.238835,0.378082,0.18359
+DBSCAN,4,11,0.9811,3,45.531235,0.595521,0.581469,0.424869,0.295775,0.225439,0.496276
+agglomerative,4,0,1.0,1,66.892407,0.649612,0.707925,0.379199,0.299073,0.203335,0.643975

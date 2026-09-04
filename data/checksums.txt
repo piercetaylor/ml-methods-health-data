@@ -1,0 +1,5 @@
+# SHA-256 of the file each dataset's UCI record serves at
+# https://archive.ics.uci.edu/static/public/<id>/data.csv
+f792c388d9b470aac4fbf21c39b176534d55a116e7626881c30bbe7ab0341422  diabetes_130_us_hospitals.csv
+a6ebd135c7870d083520fcb99a76d8477ae42700b72db374e3efbfd103dfbdfd  hcv_data.csv
+ab7c9f801a6fc0568605bda3796a3962d0b940a19ced4060fb1e2ff98438b5cc  liver_disorders.csv

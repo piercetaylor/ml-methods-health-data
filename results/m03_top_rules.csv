@@ -1,0 +1,21 @@
+antecedent,consequent,support,confidence,lift,conviction
+"mean concave points_0, radius error_0, worst perimeter_0",diagnosis_benign,0.495606,0.996466,1.588206,105.441125
+"mean concave points_0, perimeter error_0, worst perimeter_0",diagnosis_benign,0.493849,0.996454,1.588186,105.068541
+"mean concave points_0, radius error_0, worst radius_0",diagnosis_benign,0.479789,0.99635,1.588021,102.087873
+"mean concave points_0, perimeter error_0, worst radius_0",diagnosis_benign,0.478032,0.996337,1.587999,101.71529
+"mean concavity_0, perimeter error_0, worst perimeter_0",diagnosis_benign,0.474517,0.99631,1.587956,100.970123
+"mean concavity_0, radius error_0, worst perimeter_0",diagnosis_benign,0.474517,0.99631,1.587956,100.970123
+"mean concavity_0, perimeter error_0, worst radius_0",diagnosis_benign,0.455185,0.996154,1.587707,96.871705
+"mean concavity_0, radius error_0, worst radius_0",diagnosis_benign,0.455185,0.996154,1.587707,96.871705
+"radius error_0, worst compactness_0, worst perimeter_0",diagnosis_benign,0.455185,0.996154,1.587707,96.871705
+"perimeter error_0, worst compactness_0, worst perimeter_0",diagnosis_benign,0.453427,0.996139,1.587684,96.499121
+"radius error_0, worst compactness_0, worst radius_0",diagnosis_benign,0.435852,0.995984,1.587437,92.773286
+"perimeter error_0, worst compactness_0, worst radius_0",diagnosis_benign,0.434095,0.995968,1.587411,92.400703
+"radius error_0, worst concavity_0, worst perimeter_0",diagnosis_benign,0.425308,0.995885,1.587279,90.537786
+"perimeter error_0, worst concavity_0, worst perimeter_0",diagnosis_benign,0.42355,0.995868,1.587251,90.165202
+"perimeter error_0, worst concave points_0, worst perimeter_0",diagnosis_benign,0.40949,0.995726,1.587026,87.184534
+"radius error_0, worst concave points_0, worst perimeter_0",diagnosis_benign,0.40949,0.995726,1.587026,87.184534
+"radius error_0, worst concavity_0, worst radius_0",diagnosis_benign,0.405975,0.99569,1.586968,86.439367
+"perimeter error_0, worst concavity_0, worst radius_0",diagnosis_benign,0.404218,0.995671,1.586938,86.066784
+"mean compactness_0, perimeter error_0, worst perimeter_0",diagnosis_benign,0.400703,0.995633,1.586878,85.321617
+"mean compactness_0, radius error_0, worst perimeter_0",diagnosis_benign,0.400703,0.995633,1.586878,85.321617

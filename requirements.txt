@@ -1,0 +1,17 @@
+# Pinned to the versions the recorded results were produced with.
+#
+#   python -m venv .venv
+#   .venv/Scripts/python -m pip install -r requirements.txt   (Windows)
+#   .venv/bin/python -m pip install -r requirements.txt       (Linux, macOS)
+#
+# Gate 00 compares each pin against the importable version and fails on a
+# mismatch, because a result produced under a different version of a library is
+# not the result this repository records.
+matplotlib==3.10.7
+mlxtend==0.23.4
+numpy==2.3.5
+pandas==2.3.3
+scikit-learn==1.7.2
+scipy==1.16.3
+statsmodels==0.14.6
+ucimlrepo==0.0.7

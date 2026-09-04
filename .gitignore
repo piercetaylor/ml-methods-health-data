@@ -1,0 +1,25 @@
+# The datasets are redistributed by the archives that publish them, not by this
+# repository. data/download_data.py and data/checksums.txt are the reproducible
+# substitute.
+data/raw/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Fitted models and derived arrays are rebuilt by the pipeline.
+*.pkl
+*.joblib
+*.npz
+
+# Large or transient intermediates
+*.zip
+*.log
+
+# Working records kept locally and not part of the deliverable.
+notes/
+docs/project-plan.md
+docs/execution-log.md
+docs/gate-fault-injection.md

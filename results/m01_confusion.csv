@@ -1,0 +1,5 @@
+observed,predicted,encounters
+not readmitted,not readmitted,13018
+not readmitted,readmitted,8667
+readmitted,not readmitted,1172
+readmitted,readmitted,1654

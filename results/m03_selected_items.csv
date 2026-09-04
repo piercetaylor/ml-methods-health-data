@@ -1,0 +1,20 @@
+item,rules
+worst perimeter_0,116
+worst radius_0,95
+worst concavity_0,74
+worst concave points_0,68
+worst area_0,61
+mean concave points_0,60
+mean area_0,58
+mean concavity_0,53
+perimeter error_0,52
+radius error_0,52
+area error_0,51
+worst compactness_0,39
+mean perimeter_0,32
+fractal dimension error_0,31
+concavity error_0,30
+mean radius_0,15
+mean compactness_0,13
+compactness error_0,7
+worst fractal dimension_0,1
