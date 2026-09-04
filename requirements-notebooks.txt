@@ -1,0 +1,11 @@
+# The notebooks under notebooks/ call the same functions as the pipeline and
+# need a kernel to execute. These pins are in addition to requirements.txt and
+# are not checked by gate 00, because the recorded results do not depend on
+# them.
+#
+#   .venv/Scripts/python -m pip install -r requirements-notebooks.txt
+#   .venv/Scripts/python -m nbconvert --to notebook --execute --inplace notebooks/*.ipynb
+ipykernel==7.3.0
+jupyter_client==8.10.0
+nbconvert==7.17.1
+nbformat==5.11.1
