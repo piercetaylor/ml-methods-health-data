@@ -95,6 +95,23 @@ def write_table(rows: Iterable[dict], name: str,
     return len(rows)
 
 
+def write_processed(frame, name: str) -> int:
+    """Write one cleaned table or partition to ``data/processed/<name>.csv``.
+
+    The analyses fit on frames built in memory, and these files are the same
+    frames written out, so the exact rows behind every recorded number can be
+    read without running anything. An empty frame is refused for the same
+    reason an empty result table is.
+    """
+    if len(frame) == 0:
+        raise ValueError(
+            f"refusing to write an empty table to data/processed/{name}.csv")
+    config.PROCESSED.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(config.PROCESSED / f"{name}.csv", index=False,
+                 lineterminator="\n")
+    return len(frame)
+
+
 def read_table(name: str) -> list[dict]:
     path = config.RESULTS / f"{name}.csv"
     if not path.exists():

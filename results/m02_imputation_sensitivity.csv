@@ -1,0 +1,3 @@
+comparison,rows_all,rows_complete,adjusted_rand_all,adjusted_mutual_information_all,homogeneity_all,completeness_all,adjusted_rand_complete,adjusted_mutual_information_complete,homogeneity_complete,completeness_complete
+"k-means, k=4, against four categories",608,582,0.13194,0.196556,0.277015,0.162115,0.136662,0.238835,0.378082,0.18359
+"k-means, k=2, against cirrhosis",608,582,0.815224,0.66528,0.624463,0.715833,0.906254,0.797433,0.798612,0.798612

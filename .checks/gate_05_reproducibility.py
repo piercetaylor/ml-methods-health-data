@@ -46,13 +46,17 @@ if os.environ.get("SKIP_RERUN"):
                  "SKIP_RERUN is set, so no re-run was attempted")
     harness.skip("the pipeline reproduces every recorded table",
                  "SKIP_RERUN is set, so no re-run was attempted")
+    harness.skip("the pipeline reproduces every processed table",
+                 "SKIP_RERUN is set, so no re-run was attempted")
     harness.finish()
 
 with tempfile.TemporaryDirectory(prefix="ml-methods-rerun-") as scratch:
     results = Path(scratch) / "results"
+    processed = Path(scratch) / "processed"
     environment = dict(os.environ,
                        ML_METHODS_RESULTS=str(results),
                        ML_METHODS_FIGURES=str(Path(scratch) / "figures"),
+                       ML_METHODS_PROCESSED=str(processed),
                        PYTHONIOENCODING="utf-8")
     print("  re-running the pipeline into {}".format(results))
     completed = subprocess.run(
@@ -105,5 +109,23 @@ with tempfile.TemporaryDirectory(prefix="ml-methods-rerun-") as scratch:
                   "{} of {} tables differ".format(len(unequal),
                                                   len(committed_tables))
                   + ("" if not unequal else "; " + ", ".join(unequal[:6])))
+
+    # The cleaned tables and partitions under data/processed are what every
+    # analysis fitted on, so they are compared the same way. A cleaning step
+    # that changed would show here before it showed in any result.
+    committed_processed = sorted(path.name for path
+                                 in (config.ROOT / "data" / "processed")
+                                 .glob("*.csv"))
+    unequal_processed = [
+        name for name in committed_processed
+        if not (processed / name).exists()
+        or (processed / name).read_bytes()
+        != (config.ROOT / "data" / "processed" / name).read_bytes()]
+    harness.check("every processed table is reproduced byte for byte",
+                  committed_processed and not unequal_processed,
+                  "{} of {} tables differ".format(len(unequal_processed),
+                                                  len(committed_processed))
+                  + ("" if not unequal_processed
+                     else "; " + ", ".join(unequal_processed[:6])))
 
 harness.finish()

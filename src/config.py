@@ -19,13 +19,21 @@ RAW = DATA / "raw"
 # the committed files aside first.
 RESULTS = Path(os.environ.get("ML_METHODS_RESULTS", str(ROOT / "results")))
 FIGURES = Path(os.environ.get("ML_METHODS_FIGURES", str(ROOT / "figures")))
+# The cleaned tables and the partition memberships every analysis reads,
+# written by the pipeline and committed beside the results they produced.
+PROCESSED = Path(os.environ.get("ML_METHODS_PROCESSED",
+                                str(DATA / "processed")))
 
 CHECKSUMS = DATA / "checksums.txt"
 METRICS = RESULTS / "metrics.csv"
 
 # One seed governs every stochastic step in every analysis: the train and test
 # split, the k-means initializations, the discretizer, and the network weights.
+# The headline of each analysis is produced at SEED. SEED_LIST holds the seeds
+# the repeated-partition comparisons run over, and SEED is the first of them, so
+# the run at the primary seed is one of the repeats and not a separate draw.
 SEED = 20251206
+SEED_LIST = tuple(SEED + offset for offset in range(5))
 
 # --- data sources ----------------------------------------------------------
 # The three downloaded sets are served by the UCI Machine Learning Repository
@@ -118,10 +126,22 @@ MLP_GRID = {
 MLP_MAX_ITER = 200
 PERMUTATION_REPEATS = 10
 
+# The grid is searched once under each training regime. Balanced oversamples
+# the minority class to parity inside each training fold, which is what the
+# coursework did; unbalanced trains on the natural class distribution. The
+# headline configuration is the best cross-validated score across both, so the
+# choice of regime is a measured result and not a premise.
+TRAINING_REGIMES = ("balanced", "unbalanced")
+
 # --- model 2, HCV clustering ------------------------------------------------
 HCV_FEATURES = ("ALB", "ALP", "ALT", "AST", "BIL", "CHE",
                 "CHOL", "CREA", "GGT", "PROT")
 HCV_CLUSTER_RANGE = (2, 3, 4, 5, 6)
+# Subjects missing an assay are imputed from their nearest neighbors on the
+# assays they do hold, on the standardized scale, with no reference to the
+# category. The complete-case result is recorded beside it as a sensitivity.
+HCV_IMPUTE_NEIGHBORS = 5
+HCV_STABILITY_SEEDS = 10
 HCV_K = 4          # the number of released diagnostic categories
 DBSCAN_EPS_GRID = tuple(round(0.1 * step, 2) for step in range(5, 41))
 DBSCAN_MIN_SAMPLES = (3, 4, 5, 6, 8, 10)
@@ -138,6 +158,9 @@ MAX_ITEMSET_LEN = 4
 BUPA_EXCLUDED = "selector"
 BUPA_PREDICTORS = ("mcv", "alkphos", "sgpt", "sgot", "gammagt")
 BUPA_TARGET = "drinks"
+# One split of 341 rows gives one test score with a wide sampling distribution,
+# so the split is repeated this many times and the spread is recorded.
+BUPA_SPLIT_REPEATS = 20
 
 # --- reproducibility --------------------------------------------------------
 # Wall-clock timings differ between two runs that agree on every measured

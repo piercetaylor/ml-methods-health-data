@@ -1,4 +1,4 @@
 model,roc_auc,average_precision,accuracy,balanced_accuracy,precision,recall,f1,brier
-"network, balanced training",0.632799,0.188919,0.598588,0.592801,0.160256,0.58528,0.251616,0.214223
-"network, unbalanced training",0.663541,0.223637,0.884338,0.507794,0.460177,0.018401,0.035386,0.097483
-"logistic regression, balanced training",0.659139,0.219241,0.501856,0.60445,0.153829,0.737792,0.254579,0.227419
+"network, unbalanced training, selected",0.658384,0.218368,0.646771,0.610184,0.176431,0.562633,0.268626,0.097834
+"network, balanced training",0.595245,0.156801,0.438456,0.562311,0.136031,0.723284,0.228994,0.233752
+"logistic regression, unbalanced training",0.658164,0.219366,0.712537,0.605654,0.19233,0.466737,0.272408,0.097802

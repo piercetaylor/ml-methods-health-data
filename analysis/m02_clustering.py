@@ -7,6 +7,8 @@ The HCV data (Lichtinghagen et al. 2020) holds ten laboratory values for 615
 subjects, each labeled as a blood donor or as carrying hepatitis, fibrosis or
 cirrhosis. The labels are withheld from the clustering and used afterwards to
 measure how much of the diagnostic structure the unlabeled values recover.
+Every subject is analyzed; the few missing assay values are imputed without
+reference to the label, and the complete cases are scored alone as a check.
 
 Three methods are compared at the four clusters the label set implies: k-means,
 DBSCAN and agglomerative clustering with complete linkage. Internal validity is
@@ -31,8 +33,8 @@ from src import config, data, evaluate, utils  # noqa: E402
 PREFIX = "m02."
 
 
-def fit_kmeans(features, k: int):
-    return KMeans(n_clusters=k, n_init=10, random_state=config.SEED).fit(features)
+def fit_kmeans(features, k: int, seed: int = config.SEED):
+    return KMeans(n_clusters=k, n_init=10, random_state=seed).fit(features)
 
 
 def search_dbscan(features, reference) -> tuple[dict, list[dict]]:
@@ -179,6 +181,63 @@ def main() -> int:
              for index, row in pandas.crosstab(frame["cluster_k2"],
                                                frame["cirrhosis"]).iterrows()],
             "m02_contingency_k2")
+
+        # --- the imputed subjects, held out as a sensitivity -----------------
+        # The results above use every subject, with the 26 incomplete ones
+        # imputed. The same two k-means solutions are refitted on the complete
+        # cases alone, so the effect of keeping the imputed subjects is a
+        # recorded difference and not an assumption either way.
+        complete = ~frame["imputed"].to_numpy()
+        scaled_complete = StandardScaler().fit_transform(raw[complete])
+        reference_complete = reference[complete]
+        cirrhosis_complete = frame.loc[complete, "cirrhosis"].to_numpy()
+        record.set(PREFIX + "complete_case.rows", int(complete.sum()))
+        sensitivity = []
+        for name, labels_all, labels_complete, truth_all, truth_complete in (
+                ("k-means, k=4, against four categories",
+                 kmeans.labels_,
+                 fit_kmeans(scaled_complete, config.HCV_K).labels_,
+                 reference, reference_complete),
+                ("k-means, k=2, against cirrhosis",
+                 two.labels_,
+                 fit_kmeans(scaled_complete, 2).labels_,
+                 frame["cirrhosis"].to_numpy(), cirrhosis_complete)):
+            row = {"comparison": name,
+                   "rows_all": int(len(labels_all)),
+                   "rows_complete": int(len(labels_complete))}
+            for suffix, labels, truth in (("_all", labels_all, truth_all),
+                                          ("_complete", labels_complete,
+                                           truth_complete)):
+                for key, value in evaluate.agreement(truth, labels).items():
+                    row[key + suffix] = round(value, 6)
+            sensitivity.append(row)
+        utils.write_table(sensitivity, "m02_imputation_sensitivity")
+        record.set(PREFIX + "complete_case.kmeans.adjusted_rand",
+                   sensitivity[0]["adjusted_rand_complete"])
+        record.set(PREFIX + "complete_case.kmeans_k2_vs_cirrhosis.adjusted_rand",
+                   sensitivity[1]["adjusted_rand_complete"])
+
+        # --- stability over the k-means seed --------------------------------
+        # k-means is run from ten initializations at one seed. The two headline
+        # solutions are refitted at ten further seeds and the agreement measure
+        # is recorded at each, so the reported value is read against its spread.
+        stability = []
+        for offset in range(config.HCV_STABILITY_SEEDS):
+            seed = config.SEED + offset
+            stability.append({
+                "seed": seed,
+                "adjusted_rand_k4": round(evaluate.agreement(
+                    reference, fit_kmeans(scaled, config.HCV_K, seed).labels_
+                )["adjusted_rand"], 6),
+                "adjusted_rand_k2_vs_cirrhosis": round(evaluate.agreement(
+                    frame["cirrhosis"], fit_kmeans(scaled, 2, seed).labels_
+                )["adjusted_rand"], 6)})
+        utils.write_table(stability, "m02_seed_stability")
+        for column in ("adjusted_rand_k4", "adjusted_rand_k2_vs_cirrhosis"):
+            values = [row[column] for row in stability]
+            record.set(PREFIX + "stability." + column + "_min", min(values))
+            record.set(PREFIX + "stability." + column + "_max", max(values))
+        record.set(PREFIX + "stability.seeds", len(stability))
 
         # --- the tables the figures are drawn from ---------------------------
         profile = []

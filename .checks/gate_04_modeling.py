@@ -67,23 +67,68 @@ harness.check("accuracy is reported beside the majority-class rate",
                   record.get("m01.network.test_accuracy"),
                   record.get("m01.network.test_majority_class_rate")))
 
-# The oversampling is a design choice, so its effect is measured and the
-# measurement is checked to exist. The direction is not asserted here: a gate
-# that required the balanced fit to lose would fail on data where it wins.
-harness.check("the balanced and unbalanced fits of one architecture are both "
-              "recorded",
+# The training regime is a searched hyperparameter, so the grid must hold
+# both regimes and the headline must be the best score across them. Which
+# regime wins is not asserted: a gate that required one to lose would fail on
+# data where it wins.
+harness.check("the grid was searched under both training regimes",
+              {row["training"] for row in harness.table("m01_grid")}
+              == set(config.TRAINING_REGIMES),
+              "regimes in the grid: {}".format(sorted(
+                  {row["training"] for row in harness.table("m01_grid")})))
+harness.check("the selected regime is the one whose best score is higher",
+              record.number("m01.best_cv_roc_auc_"
+                            + record.get("m01.best_training"))
+              >= max(record.number("m01.best_cv_roc_auc_" + name)
+                     for name in config.TRAINING_REGIMES),
+              "{} selected; best balanced {}, best unbalanced {}".format(
+                  record.get("m01.best_training"),
+                  record.get("m01.best_cv_roc_auc_balanced"),
+                  record.get("m01.best_cv_roc_auc_unbalanced")))
+harness.check("the same architecture is scored under both regimes",
               len(harness.table("m01_model_comparison")) == 3
-              and record.number("m01.unbalanced.test_roc_auc") > 0.5,
-              "balanced {}, unbalanced {}, logistic {} on test ROC-AUC".format(
+              and record.number("m01.alternate.test_roc_auc") > 0.5
+              and record.get("m01.alternate.training")
+              != record.get("m01.network.training"),
+              "{} {}, {} {}, logistic {} on test ROC-AUC".format(
+                  record.get("m01.network.training"),
                   record.get("m01.network.test_roc_auc"),
-                  record.get("m01.unbalanced.test_roc_auc"),
+                  record.get("m01.alternate.training"),
+                  record.get("m01.alternate.test_roc_auc"),
                   record.get("m01.logistic.test_roc_auc")))
-harness.check("the unbalanced fit was scored at the same threshold",
-              record.number("m01.unbalanced.test_threshold")
-              == record.number("m01.network.test_threshold"),
+harness.check("every model on the test partition was scored at one threshold",
+              record.number("m01.alternate.test_threshold")
+              == record.number("m01.network.test_threshold")
+              == record.number("m01.logistic.test_threshold"),
               "threshold {} from the {}".format(
                   record.get("m01.network.test_threshold"),
                   record.get("m01.threshold_source")))
+
+# --- repeated partitions ----------------------------------------------------
+# The headline is one draw. The repeats must exist, must include the primary
+# draw and reproduce it exactly, and must report a spread.
+harness.check("the headline configuration was scored under repeated partitions",
+              record.number("m01.repeats.count") == len(config.SEED_LIST)
+              and len(harness.table("m01_repeated_splits"))
+              == 2 * len(config.SEED_LIST),
+              "{} partitions, {} rows".format(
+                  record.get("m01.repeats.count"),
+                  len(harness.table("m01_repeated_splits"))))
+harness.check("the repeat at the primary seed reproduces the headline fit",
+              abs(record.number("m01.repeats.network.roc_auc_at_primary_seed")
+                  - record.number("m01.network.test_roc_auc")) < 1e-5,
+              "{} in the repeats against {} in the headline".format(
+                  record.get("m01.repeats.network.roc_auc_at_primary_seed"),
+                  record.get("m01.network.test_roc_auc")))
+harness.check("the spread over partitions is recorded for both models",
+              record.number("m01.repeats.network.roc_auc_sd") > 0
+              and record.number("m01.repeats.logistic.roc_auc_sd") > 0,
+              "network {} +/- {}, logistic {} +/- {} over {} draws".format(
+                  record.get("m01.repeats.network.roc_auc_mean"),
+                  record.get("m01.repeats.network.roc_auc_sd"),
+                  record.get("m01.repeats.logistic.roc_auc_mean"),
+                  record.get("m01.repeats.logistic.roc_auc_sd"),
+                  record.get("m01.repeats.count")))
 
 # --- the ordering defect, reproduced ---------------------------------------
 harness.check("balancing before the split does put patients on both sides",
@@ -92,12 +137,22 @@ harness.check("balancing before the split does put patients on both sides",
               "across that boundary".format(
                   record.get("m01.leaked.patients_on_both_sides"),
                   record.get("m01.leaked.rows_on_both_sides")))
+harness.check("the ordering defect is paired with the balanced fit under the "
+              "proper partition",
+              record.get("m01." + record.get("m01.leaked.counterpart")
+                         + ".training") == "balanced",
+              "counterpart is the {} fit, trained {}".format(
+                  record.get("m01.leaked.counterpart"),
+                  record.get("m01." + record.get("m01.leaked.counterpart")
+                             + ".training")))
 harness.check("the ordering defect inflates the reported area",
               record.number("m01.leaked.test_roc_auc")
-              > record.number("m01.network.test_roc_auc"),
+              > record.number("m01." + record.get("m01.leaked.counterpart")
+                              + ".test_roc_auc"),
               "{} under the defect against {} with patients held apart".format(
                   record.get("m01.leaked.test_roc_auc"),
-                  record.get("m01.network.test_roc_auc")))
+                  record.get("m01." + record.get("m01.leaked.counterpart")
+                             + ".test_roc_auc")))
 
 # --- model 2, clustering ----------------------------------------------------
 # A clustering has no held-out accuracy, so nothing of the kind is checked
@@ -134,6 +189,25 @@ harness.check("the internal index and the label agreement disagree on the "
               and record.number("m02.kmeans.adjusted_rand")
               < record.number("m02.dbscan.adjusted_rand"),
               "k-means leads on Calinski-Harabasz and DBSCAN on adjusted Rand")
+harness.check("the imputation sensitivity was recorded on the complete cases",
+              0 < record.number("m02.complete_case.rows")
+              < record.number("m02.rows_analyzed")
+              and record.number(
+                  "m02.complete_case.kmeans_k2_vs_cirrhosis.adjusted_rand") > 0,
+              "{} complete cases; k=2 against cirrhosis {} complete, {} all"
+              .format(record.get("m02.complete_case.rows"),
+                      record.get("m02.complete_case."
+                                 "kmeans_k2_vs_cirrhosis.adjusted_rand"),
+                      record.get("m02.kmeans_k2_vs_cirrhosis.adjusted_rand")))
+harness.check("the k-means seed stability was measured",
+              record.number("m02.stability.seeds") == config.HCV_STABILITY_SEEDS
+              and record.number("m02.stability.adjusted_rand_k2_vs_cirrhosis_min")
+              <= record.number("m02.kmeans_k2_vs_cirrhosis.adjusted_rand")
+              <= record.number("m02.stability.adjusted_rand_k2_vs_cirrhosis_max"),
+              "k=2 against cirrhosis from {} to {} over {} seeds".format(
+                  record.get("m02.stability.adjusted_rand_k2_vs_cirrhosis_min"),
+                  record.get("m02.stability.adjusted_rand_k2_vs_cirrhosis_max"),
+                  record.get("m02.stability.seeds")))
 harness.check("the two-cluster solution against cirrhosis is the strongest "
               "recovery",
               record.number("m02.kmeans_k2_vs_cirrhosis.adjusted_rand")
@@ -184,6 +258,17 @@ harness.check("the cross-validated fit is recorded beside the single split",
               "cross-validated {} plus or minus {} against {} on one split"
               .format(record.get("m04.ols.cv_r2_mean"),
                       record.get("m04.ols.cv_r2_sd"),
+                      record.get("m04.ols.test_r2")))
+harness.check("the least squares split was repeated and the primary draw "
+              "reproduces the headline",
+              record.number("m04.repeats.count") == config.BUPA_SPLIT_REPEATS
+              and abs(record.number("m04.repeats.r2_at_primary_seed")
+                      - record.number("m04.ols.test_r2")) < 1e-5,
+              "{} draws, R2 from {} to {}, {} at the primary seed against {}"
+              .format(record.get("m04.repeats.count"),
+                      record.get("m04.repeats.r2_min"),
+                      record.get("m04.repeats.r2_max"),
+                      record.get("m04.repeats.r2_at_primary_seed"),
                       record.get("m04.ols.test_r2")))
 harness.check("the residual normality the intervals assume was tested",
               record.number("m04.ols.residual_jarque_bera") > 0,

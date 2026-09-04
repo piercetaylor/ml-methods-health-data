@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pandas
 
-from . import config
+from . import config, utils
 
 
 def _verify(frame: pandas.DataFrame, name: str) -> None:
@@ -134,18 +134,32 @@ def load_diabetes() -> tuple[pandas.DataFrame, dict]:
     counts["rows_analyzed"] = len(frame)
     counts["patients_analyzed"] = frame["patient_nbr"].nunique()
     counts["positive_rate"] = round(float(frame["readmitted_30d"].mean()), 6)
-    return frame.reset_index(drop=True), counts
+    frame = frame.reset_index(drop=True)
+    utils.write_processed(frame, "readmission_cohort")
+    return frame, counts
 
 
 # --- model 2, HCV -----------------------------------------------------------
 def load_hcv() -> tuple[pandas.DataFrame, dict]:
-    """The hepatitis C panel, complete cases, with the released category kept.
+    """The hepatitis C panel, every subject kept, with the released category.
 
     The released column CGT holds gamma-glutamyl transferase and is renamed GGT
     to match the assay's usual abbreviation. The category "0s=suspect Blood
     Donor" marks a donor whose values were questioned, and it holds too few rows
     to stand as its own group, so those rows are removed and counted.
+
+    Subjects missing an assay are kept and the missing value is imputed from
+    the nearest subjects on the assays they do hold. The missing cells fall
+    mostly on alkaline phosphatase and cholesterol, whose medians differ by a
+    factor of two between the categories, so a single overall median would move
+    a disease case toward the donor center. Nearest neighbors on the other nine
+    assays place a subject by its own values, and the category is never read.
+    An ``imputed`` column marks the rows, so the analysis can score the complete
+    cases alone beside the full set.
     """
+    from sklearn.impute import KNNImputer
+    from sklearn.preprocessing import StandardScaler
+
     frame = _read("hcv")
     frame = frame.rename(columns={"CGT": "GGT"})
     counts = {"rows_released": len(frame)}
@@ -157,23 +171,43 @@ def load_hcv() -> tuple[pandas.DataFrame, dict]:
     counts["rows_suspect_donor"] = int(suspect.sum())
     frame = frame[~suspect].copy()
 
-    before = len(frame)
-    frame = frame.dropna(subset=list(config.HCV_FEATURES))
-    counts["rows_incomplete"] = before - len(frame)
+    features = list(config.HCV_FEATURES)
+    missing = frame[features].isna()
+    frame["imputed"] = missing.any(axis=1).to_numpy()
+    counts["rows_incomplete"] = int(frame["imputed"].sum())
+    counts["cells_imputed"] = int(missing.to_numpy().sum())
+    counts["cells_total"] = int(missing.size)
+    for name, value in missing.sum().items():
+        if value:
+            counts["cells_imputed_" + name] = int(value)
+
+    # The imputer works on the standardized scale, so an assay with a large
+    # range does not dominate the distance, and the scaler is fitted on the
+    # observed values only. The imputed values are returned to the released
+    # scale so the profile tables read in the released units.
+    scaler = StandardScaler().fit(frame[features])
+    filled = KNNImputer(n_neighbors=config.HCV_IMPUTE_NEIGHBORS).fit_transform(
+        scaler.transform(frame[features]))
+    frame[features] = scaler.inverse_transform(filled)
     counts["rows_analyzed"] = len(frame)
+    counts["rows_complete"] = int((~frame["imputed"]).sum())
 
     # The released label is a string carrying its own ordinal prefix. The
     # integer is kept for the contingency table and the text for the figures.
     frame["category_index"] = frame["Category"].str.split("=").str[0].astype(int)
     frame["category_label"] = frame["Category"].str.split("=").str[1]
     counts["categories_analyzed"] = int(frame["category_index"].nunique())
-    # The rows removed for incompleteness are not spread evenly across the
-    # categories, so the analyzed count of each is recorded beside the released
-    # count. The difference is a limitation of the complete-case analysis and
-    # the clustering results have to be read against it.
-    for label, value in frame["category_label"].value_counts().items():
-        counts["analyzed_" + label.strip().lower().replace(" ", "_")] = int(value)
-    return frame.reset_index(drop=True), counts
+    # The imputed rows are not spread evenly across the categories, so the
+    # count of each is recorded beside the count of imputed rows in each. The
+    # sensitivity in the analysis drops the imputed rows, and these counts say
+    # which categories that removal thins.
+    for label, block in frame.groupby("category_label"):
+        key = label.strip().lower().replace(" ", "_")
+        counts["analyzed_" + key] = int(len(block))
+        counts["imputed_" + key] = int(block["imputed"].sum())
+    frame = frame.reset_index(drop=True)
+    utils.write_processed(frame, "hcv_panel")
+    return frame, counts
 
 
 # --- model 4, BUPA ----------------------------------------------------------
@@ -203,7 +237,9 @@ def load_bupa() -> tuple[pandas.DataFrame, dict]:
     frame = frame[~duplicated].copy()
     counts["rows_analyzed"] = len(frame)
     counts["drinks_zero_rows"] = int((frame[config.BUPA_TARGET] == 0).sum())
-    return frame.reset_index(drop=True), counts
+    frame = frame.reset_index(drop=True)
+    utils.write_processed(frame, "liver_panel")
+    return frame, counts
 
 
 # --- model 3, breast cancer -------------------------------------------------
@@ -224,4 +260,5 @@ def load_breast_cancer() -> tuple[pandas.DataFrame, dict]:
               "rows_malignant": int((frame["diagnosis"] == "malignant").sum()),
               "rows_benign": int((frame["diagnosis"] == "benign").sum()),
               "rows_incomplete": int(frame.isna().any(axis=1).sum())}
+    utils.write_processed(frame, "breast_cancer_measurements")
     return frame, counts

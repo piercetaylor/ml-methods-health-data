@@ -1,7 +1,8 @@
-# The datasets are redistributed by the archives that publish them, not by this
-# repository. data/download_data.py and data/checksums.txt are the reproducible
-# substitute.
-data/raw/
+# The three downloaded datasets are committed under data/raw/ with the
+# attribution their CC BY 4.0 release requires, and data/checksums.txt records
+# the digest of each so a committed file can be shown to be the released file.
+# Only the partial download left by an interrupted fetch is ignored.
+data/raw/*.part
 
 # Python
 .venv/

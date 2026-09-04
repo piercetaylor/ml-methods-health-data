@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import numpy
+import pandas
 import statsmodels.api as statsmodels_api
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -59,6 +60,10 @@ def main() -> int:
 
         train, test = splits.row_split(frame)
         record.update(splits.report(train, test), PREFIX + "split.")
+        utils.write_processed(
+            pandas.concat([train.assign(partition="train"),
+                           test.assign(partition="test")]),
+            "liver_partition")
 
         x_train = train[predictors].to_numpy(dtype=float)
         x_test = test[predictors].to_numpy(dtype=float)
@@ -163,6 +168,34 @@ def main() -> int:
         utils.write_table(rows, "m04_model_comparison",
                           columns=["model", "r2", "rmse", "mae",
                                    "cv_r2_mean", "cv_r2_sd"])
+
+        # --- the same fit under repeated partitions ---------------------------
+        # The held-out score above belongs to one draw. The split is repeated at
+        # twenty seeds, the primary seed first, and least squares is refitted
+        # and scored on each, so the spread of the test R-squared is measured
+        # and the single number is read against it.
+        repeats = []
+        for position in range(config.BUPA_SPLIT_REPEATS):
+            seed = config.SEED + position
+            again_train, again_test = splits.row_split(frame, seed=seed)
+            model = LinearRegression().fit(
+                again_train[predictors].to_numpy(dtype=float),
+                again_train[target].to_numpy(dtype=float))
+            scored = evaluate.regression(
+                again_test[target].to_numpy(dtype=float),
+                model.predict(again_test[predictors].to_numpy(dtype=float)))
+            repeats.append({"seed": seed,
+                            "r2": round(scored["r2"], 6),
+                            "rmse": round(scored["rmse"], 6),
+                            "test_rows": scored["rows"]})
+        utils.write_table(repeats, "m04_repeated_splits")
+        r2_values = numpy.array([row["r2"] for row in repeats])
+        record.set(PREFIX + "repeats.count", len(repeats))
+        record.set(PREFIX + "repeats.r2_mean", float(r2_values.mean()))
+        record.set(PREFIX + "repeats.r2_sd", float(r2_values.std(ddof=1)))
+        record.set(PREFIX + "repeats.r2_min", float(r2_values.min()))
+        record.set(PREFIX + "repeats.r2_max", float(r2_values.max()))
+        record.set(PREFIX + "repeats.r2_at_primary_seed", float(r2_values[0]))
 
         # The observed and predicted pairs the figure is drawn from.
         utils.write_table(

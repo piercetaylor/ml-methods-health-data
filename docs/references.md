@@ -54,6 +54,13 @@ Forsyth, R. S. and R. Rada, 1986. *Machine Learning: Applications in Expert
 Systems and Information Retrieval.* Ellis Horwood. The donor's own use of the
 liver disorders data, in which `drinks` is the dependent variable.
 
+McDermott, J. and R. S. Forsyth, 2016. Diagnosing a disorder in a
+classification benchmark. *Pattern Recognition Letters* 73, 41-43.
+[doi:10.1016/j.patrec.2016.01.004](https://doi.org/10.1016/j.patrec.2016.01.004).
+The paper, written with the donor, that documents how widely the seventh
+column of the liver disorders data has been misread as a disease label, and
+the source of the caution the UCI record now carries.
+
 ## Methods
 
 Agrawal, R., T. Imielinski and A. Swami, 1993. Mining association rules between

@@ -16,7 +16,10 @@ that this reading is incorrect, and that BUPA created the field as a train and
 test selector. The record adds that the data holds no variable representing
 presence or absence of a liver disorder at all. Its variables table gives
 `selector` the role of other and `drinks` the role of target, and lists the
-associated task as regression.
+associated task as regression. McDermott and Forsyth (2016), the second of
+whom donated the data, traced the misreading through the published literature
+and found that most of the several hundred papers using the data as a
+classification benchmark had used the split flag as the class.
 
 The coursework this analysis rebuilds treated the data as a clustering problem
 and clustered the first six columns together, which places the outcome inside
@@ -49,18 +52,21 @@ attributed to its cause.
 
 The panel does carry signal. The least squares fit on the training partition
 gives F = 10.07 on 5 and 249 degrees of freedom, p = 8.6 × 10⁻⁹, so the five
-tests jointly relate to reported intake. The amount they explain is small. The
-single held-out estimate of 0.216 is the most favorable number in the table and
-it is not the most reliable one: five-fold cross-validation inside the training
-partition gives 0.058 with a standard deviation of 0.093 across folds. The
-held-out partition holds 86 subjects, and a spread that wide across five folds
-of 255 subjects means one split of that size cannot separate 0.06 from 0.22.
-The honest reading is that the panel explains somewhere under a tenth of the
-variation in reported daily intake, and that the number quoted from any one
-split of this dataset should be treated as an estimate with a standard error of
-roughly 0.1.
+tests jointly relate to reported intake. The amount they explain is small, and
+the single held-out estimate of 0.216 is the most favorable number in the table
+and the least reliable one. Five-fold cross-validation inside the training
+partition gives 0.058 with a standard deviation of 0.093 across folds.
 
-![Observed against predicted daily intake on the 86 held-out subjects, with the one-to-one line.](../figures/fig10_bupa_observed_predicted.png)
+The split itself was then redrawn twenty times, the primary seed first, and
+least squares was refitted and scored on each draw. The held-out R² has a mean
+of 0.136 and a standard deviation of 0.098 over the twenty draws, and ranges
+from −0.157 to 0.253. The primary draw, at 0.216, is the fifth highest of the
+twenty. A single partition of 341 rows into 255 and 86 is one draw from a
+distribution whose width is comparable to its center. The number to carry away
+is the mean of 0.14 with a standard error near 0.1, and not the 0.22 the
+primary split happened to produce.
+
+![Observed against predicted daily intake on the 86 held-out subjects of the primary split, with the one-to-one line (a), and the distribution of held-out R² over twenty redrawn splits, with the primary split and the mean marked (b).](../figures/fig10_bupa_observed_predicted.png)
 
 Two of the five tests carry the relationship.
 
@@ -123,9 +129,13 @@ system is known independently to run from intake to enzyme level.
 The predictors are collinear. The design matrix has a condition number of 2578,
 and alanine and aspartate aminotransferase are measured on overlapping
 processes, so their individual coefficients are less stable than the joint fit.
-The joint F test and the two significant terms are the parts of the fit worth
-quoting.
+The joint F test and the two significant terms are the parts of the fit to
+quote.
 
-Finally, 341 subjects is a small dataset for a five-predictor model. The gap
-between the in-sample R² of 0.168 and the cross-validated 0.058 is the size of
-the optimism that fitting and evaluating on the same 255 rows produces.
+The dataset is small for a five-predictor model. The gap between the
+in-sample R² of 0.168 and the cross-validated 0.058 is the size of the optimism
+that fitting and evaluating on the same 255 rows produces. The twenty redrawn
+splits show that the held-out figure from any one partition can land anywhere
+from below zero to a quarter. One of the twenty draws gives a negative
+R², which means that on that draw the panel predicted intake worse than the
+training mean would have.

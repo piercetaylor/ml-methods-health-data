@@ -109,16 +109,38 @@ harness.check("the duplicated BUPA rows were collapsed before the split",
 # --- the two unsupervised sets ---------------------------------------------
 # Neither holds a partition. What can be checked is that the exclusions were
 # recorded and that the analyzed counts follow from them.
-harness.check("the recorded HCV exclusions account for every released subject",
+harness.check("the recorded HCV exclusion accounts for every released subject",
               record.number("m02.rows_released")
               - record.number("m02.rows_suspect_donor")
-              - record.number("m02.rows_incomplete")
               == record.number("m02.rows_analyzed"),
-              "{} released, {} suspect donors, {} incomplete, {} analyzed"
+              "{} released, {} suspect donors, {} analyzed"
               .format(record.get("m02.rows_released"),
                       record.get("m02.rows_suspect_donor"),
-                      record.get("m02.rows_incomplete"),
                       record.get("m02.rows_analyzed")))
+harness.check("every HCV subject is either complete or imputed",
+              record.number("m02.rows_complete")
+              + record.number("m02.rows_incomplete")
+              == record.number("m02.rows_analyzed"),
+              "{} complete, {} imputed, {} analyzed".format(
+                  record.get("m02.rows_complete"),
+                  record.get("m02.rows_incomplete"),
+                  record.get("m02.rows_analyzed")))
+harness.check("the imputed HCV cells are few and are counted",
+              0 < record.number("m02.cells_imputed")
+              < 0.01 * record.number("m02.cells_total"),
+              "{} of {} cells imputed".format(
+                  record.get("m02.cells_imputed"),
+                  record.get("m02.cells_total")))
+harness.check("the imputed HCV rows are counted within each category",
+              sum(record.number("m02.imputed_" + name)
+                  for name in ("blood_donor", "hepatitis", "fibrosis",
+                               "cirrhosis"))
+              == record.number("m02.rows_incomplete"),
+              "donors {}, hepatitis {}, fibrosis {}, cirrhosis {}".format(
+                  record.get("m02.imputed_blood_donor"),
+                  record.get("m02.imputed_hepatitis"),
+                  record.get("m02.imputed_fibrosis"),
+                  record.get("m02.imputed_cirrhosis")))
 harness.check("the analyzed HCV categories sum to the analyzed subjects",
               sum(record.number("m02.analyzed_" + name)
                   for name in ("blood_donor", "hepatitis", "fibrosis",

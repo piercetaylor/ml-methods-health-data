@@ -72,6 +72,7 @@ def main() -> int:
 
         encoded, edges = transactions(frame, features)
         utils.write_table(edges, "m03_bin_edges")
+        utils.write_processed(encoded.astype(int), "breast_cancer_transactions")
         record.set(PREFIX + "items", int(encoded.shape[1]))
         record.set(PREFIX + "transactions", int(encoded.shape[0]))
 

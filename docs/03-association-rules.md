@@ -117,6 +117,29 @@ with no supervision and no distinguished target item, that nucleus size and
 boundary irregularity separate the diagnoses while texture, smoothness and
 symmetry do not.
 
+## What rule mining establishes that a classifier would not
+
+A classifier trained on these features separates malignant from benign with a
+cross-validated accuracy above 0.95 in the report that released them (Street
+et al. 1993), and nothing here competes with that. What the rules add is a
+different kind of statement. A
+classifier's output is a boundary in thirty dimensions that no reader can
+inspect; a rule is a conjunction of three named conditions and a count. The
+rule "lowest level of mean concave points, of radius error and of worst
+perimeter" holds for 283 samples and 282 of them are benign, and that sentence
+can be checked against the released data by anyone with the table. The price is
+that the rules describe only the region of the feature space where items are
+common enough to clear the support threshold, which here is the benign half,
+and say nothing about the rest.
+
+The 19 items the rules select are also a feature selection that used no label
+in its mining step. It arrived at size and boundary irregularity by counting
+co-occurrences, with the diagnosis present as two items among 92 and given no
+special standing. That is the one thing an unsupervised pass over labeled data
+can establish that a supervised pass cannot: whether the structure the label
+names is also structure the features hold on their own, before any model is
+fitted to the label.
+
 ## Limitations
 
 Discretization discards the ordering inside each feature and all information
